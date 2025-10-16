@@ -61,8 +61,15 @@ namespace WebBilling_Lahore_ReactCore.Controllers
                         BillingMonth = b.BillingMonth,
                         BillingYear = Convert.ToInt32(b.BillingYear),
                         Units = b.TotalUnit ?? 0,
-                        Bill = b.BillAmount ?? 0,
-                        Payment = b.PaymentStatus == "paid" ? (b.BillAmount ?? 0) : 0m
+                        Bill = b.BillAmountInDueDate ?? 0m,
+                        Payment =
+                            b.PaymentStatus == "Paid"
+                            ? (b.BillAmountInDueDate ?? 0).ToString()
+                            : b.PaymentStatus == "Paid With Surcharge"
+                            ? (b.BillAmountAfterDueDate ?? 0).ToString()
+                            : b.PaymentStatus == "Partially Paid"
+                            ? "Partially Paid"
+                            : "0"
                     })
                     .ToListAsync();
 
@@ -80,13 +87,13 @@ namespace WebBilling_Lahore_ReactCore.Controllers
                 // Step 6: Prepare final 12-month sequence (Jan→latestMonth of latestYear, then previous Oct–Dec)
                 var finalMonths = monthOrder.Take(latestMonthIndex + 1)
                     .Select(m => latestYearData.FirstOrDefault(x => x.BillingMonth == m) ??
-                                 new { BillingMonth = m, BillingYear = latestYear, Units = 0m, Bill = 0m, Payment = 0m })
+                                 new { BillingMonth = m, BillingYear = latestYear, Units = 0m, Bill = 0m, Payment = "0" })
                     .ToList();
 
                 // Add remaining months (from previous year)
                 var remainingMonths = monthOrder.Skip(latestMonthIndex + 1)
                     .Select(m => previousYearData.FirstOrDefault(x => x.BillingMonth == m) ??
-                                 new { BillingMonth = m, BillingYear = latestYear - 1, Units = 0m, Bill = 0m, Payment = 0m })
+                                 new { BillingMonth = m, BillingYear = latestYear - 1, Units = 0m, Bill = 0m, Payment = "0" })
                     .ToList();
 
                 var fullYearData = finalMonths.Concat(remainingMonths).ToList();
